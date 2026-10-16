@@ -30,7 +30,7 @@ CREATE DATABASE IF NOT EXISTS KyTucXa
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_0900_ai_ci;
 ```
-
+Rồi Server -> Data Import -> Import from Self-contained File -> chọn KyTucXa_import.sql -> Để trống Default Target Schema -> Start import
 
 ## Cài đặt và chạy
 
@@ -53,9 +53,6 @@ $env:KYTUCXA_DB_PASSWORD = ""
 $env:KYTUCXA_DB_NAME = "KyTucXa"
 python main.py
 ```
-
-Nút **Kiểm tra kết nối** trên đầu cửa sổ báo schema/version hoặc lỗi kết nối.
-
 
 ## Cấu trúc
 
