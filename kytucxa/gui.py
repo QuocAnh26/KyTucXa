@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import tkinter as tk
+import csv
 from datetime import date
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable
 
 import customtkinter as ctk
@@ -22,11 +23,16 @@ class ReportFrame(ctk.CTkFrame):
         runner: Callable[[dict[str, str]], list[dict[str, Any]]],
         fields: list[tuple[str, str]],
         note: str = "",
+        require_fields: bool = True,
+        action: tuple[str, Callable[[dict[str, str]], str]] | None = None,
     ) -> None:
         super().__init__(master, fg_color="transparent")
         self.columns = columns
         self.runner = runner
+        self.require_fields = require_fields
+        self.action = action
         self.fields: dict[str, ctk.CTkEntry] = {}
+        self.rows: list[dict[str, Any]] = []
 
         if note:
             ctk.CTkLabel(self, text=note, anchor="w", wraplength=1000).pack(
@@ -45,6 +51,13 @@ class ReportFrame(ctk.CTkFrame):
             
         self.run_button = ctk.CTkButton(controls, text="Xem báo cáo", command=self.run)
         self.run_button.grid(row=0, column=len(fields) * 2, padx=12, pady=10)
+        ctk.CTkButton(controls, text="Xuất CSV", command=self.export_csv).grid(
+            row=0, column=len(fields) * 2 + 1, padx=5, pady=10
+        )
+        if action:
+            ctk.CTkButton(
+                controls, text=action[0], command=self.run_action
+            ).grid(row=0, column=len(fields) * 2 + 2, padx=5, pady=10)
 
         table_frame = ctk.CTkFrame(self)
         table_frame.pack(fill="both", expand=True, padx=12, pady=(0, 12))
@@ -78,10 +91,10 @@ class ReportFrame(ctk.CTkFrame):
     def run(self) -> None:
         try:
             values = {key: field.get().strip() for key, field in self.fields.items()}
-            for value in values.values():
-                if not value:
-                    raise ValueError("Vui lòng nhập đủ thông tin lọc.")
+            if self.require_fields and any(not value for value in values.values()):
+                raise ValueError("Vui lòng nhập đủ thông tin lọc.")
             rows = self.runner(values)
+            self.rows = rows
             self.tree.delete(*self.tree.get_children())
             for row in rows:
                 cells = []
@@ -94,6 +107,38 @@ class ReportFrame(ctk.CTkFrame):
             self.status.configure(text=f"Có {len(rows)} dòng.")
         except Exception as exc:
             messagebox.showerror("Không thể chạy báo cáo", str(exc))
+
+    def export_csv(self) -> None:
+        if not self.rows:
+            messagebox.showinfo("Xuất CSV", "Hãy chạy báo cáo trước khi xuất.")
+            return
+        path = filedialog.asksaveasfilename(
+            title="Lưu báo cáo CSV",
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv")],
+        )
+        if not path:
+            return
+        try:
+            with open(path, "w", newline="", encoding="utf-8-sig") as output:
+                writer = csv.writer(output)
+                writer.writerow([title for _, title, _ in self.columns])
+                for row in self.rows:
+                    writer.writerow([row.get(key, "") for key, _, _ in self.columns])
+            self.status.configure(text=f"Đã xuất {len(self.rows)} dòng: {path}")
+        except Exception as exc:
+            messagebox.showerror("Không thể xuất CSV", str(exc))
+
+    def run_action(self) -> None:
+        if not self.action:
+            return
+        try:
+            values = {key: field.get().strip() for key, field in self.fields.items()}
+            if self.require_fields and any(not value for value in values.values()):
+                raise ValueError("Vui lòng nhập đủ thông tin.")
+            messagebox.showinfo(self.action[0], self.action[1](values))
+        except Exception as exc:
+            messagebox.showerror(self.action[0], str(exc))
 
 # Frame nhập dữ liệu vào database
 class DataEntryFrame(ctk.CTkFrame):
@@ -215,8 +260,41 @@ class DormitoryApp(ctk.CTk):
             lambda v: repository.monthly_costs(v["month"]),
             [("month", "Tháng (YYYY-MM)")],
             "Tổng gồm tiền phòng theo giá phòng hiện tại, sử dụng dịch vụ, vé tháng giao với tháng được chọn và phí lượt gửi xe.",
+            action=("Tạo hóa đơn tháng", self._create_invoices),
         )
         pane.set_field("month", month)
+
+        ReportFrame(
+            subtabs.add("Sức chứa phòng"),
+            [
+                ("SoPhong", "Phòng", 90),
+                ("LoaiPhong", "Loại phòng", 180),
+                ("DonGiaThang", "Giá tháng", 130),
+                ("SoNguoiToiDa", "Sức chứa", 110),
+                ("SoNguoiDangO", "Đang ở", 100),
+                ("ChoTrong", "Còn trống", 100),
+            ],
+            lambda _v: repository.room_occupancy(),
+            [],
+            "Tổng hợp số sinh viên đang ở và số chỗ còn trống theo từng phòng.",
+            require_fields=False,
+        )
+
+        pane = ReportFrame(
+            subtabs.add("Hồ sơ sinh viên"),
+            [
+                ("MaSV", "Mã SV", 100), ("SV_CCCD", "CCCD", 150),
+                ("Lop", "Lớp", 110), ("NgaySinh", "Ngày sinh", 110),
+                ("QueQuan", "Quê quán", 130), ("SoPhong", "Phòng", 80),
+                ("LoaiPhong", "Loại phòng", 150), ("DonGiaThang", "Giá phòng", 120),
+                ("SoLuotDichVu", "Lượt dịch vụ", 110),
+                ("SoLuotKhachTham", "Lượt khách", 100),
+                ("SoXe", "Số xe", 80), ("SoVeThangConHan", "Vé còn hạn", 100),
+            ],
+            lambda v: repository.student_summary(v["student_id"]),
+            [("student_id", "Mã sinh viên")],
+            "Tra cứu thông tin cơ bản và số liệu hoạt động liên quan của một sinh viên.",
+        )
 
         pane = ReportFrame(
             subtabs.add("Dịch vụ theo kỳ"),
@@ -266,6 +344,14 @@ class DormitoryApp(ctk.CTk):
         entry_tab = self.tabs.add("Ghi nhận / đăng ký")
         subtabs = ctk.CTkTabview(entry_tab)
         subtabs.pack(fill="both", expand=True, padx=4, pady=4)
+
+        DataEntryFrame(
+            subtabs.add("Chuyển phòng"),
+            "Chuyển sinh viên sang phòng khác",
+            [("student_id", "Mã sinh viên"), ("room_id", "Số phòng mới")],
+            self._transfer_student,
+            "Kiểm tra chỗ trống trước khi chuyển; trigger sức chứa trong CSDL cũng được áp dụng.",
+        )
 
         DataEntryFrame(
             subtabs.add("Sinh viên"),
@@ -322,6 +408,18 @@ class DormitoryApp(ctk.CTk):
             self._save_monthly_vehicle,
             "Giá vé mặc định 100.000 đồng/tháng. Ứng dụng kiểm tra tối đa 2 vé tháng còn hạn; trigger CSDL kiểm tra lại.",
         )
+
+    @staticmethod
+    def _create_invoices(values: dict[str, str]) -> str:
+        month = values["month"]
+        date.fromisoformat(f"{month}-01")
+        created, skipped = repository.create_monthly_invoices(month)
+        return f"Đã tạo {created} hóa đơn; bỏ qua {skipped} sinh viên đã có hóa đơn trong tháng {month}."
+
+    @staticmethod
+    def _transfer_student(values: dict[str, str]) -> str:
+        repository.transfer_student(values["student_id"], values["room_id"])
+        return f"Đã chuyển {values['student_id']} sang phòng {values['room_id']}."
 
     @staticmethod
     def _save_student(values: dict[str, str]) -> str:

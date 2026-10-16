@@ -138,6 +138,110 @@ def service_revenue(month: str) -> list[dict[str, Any]]:
     """
     return _read_all(sql, (start, end, end, start, start, end))
 
+
+def room_occupancy() -> list[dict[str, Any]]:
+    """Return room capacity, current occupancy, and remaining beds."""
+    return _read_all(
+        """
+        SELECT p.SoPhong, p.LoaiPhong, p.DonGiaThang, p.SoNguoiToiDa,
+               COUNT(s.MaSV) AS SoNguoiDangO,
+               p.SoNguoiToiDa - COUNT(s.MaSV) AS ChoTrong
+        FROM PHONG p
+        LEFT JOIN SINHVIEN s ON s.SoPhong = p.SoPhong
+        GROUP BY p.SoPhong, p.LoaiPhong, p.DonGiaThang, p.SoNguoiToiDa
+        ORDER BY p.SoPhong
+        """,
+        (),
+    )
+
+
+def student_summary(student_id: str) -> list[dict[str, Any]]:
+    """Return a compact student profile with related activity counts."""
+    return _read_all(
+        """
+        SELECT sv.MaSV, sv.SV_CCCD, sv.Lop, sv.NgaySinh, sv.QueQuan,
+               sv.SoPhong, p.LoaiPhong, p.DonGiaThang,
+               (SELECT COUNT(*) FROM SUDUNG sd WHERE sd.MaSV = sv.MaSV) AS SoLuotDichVu,
+               (SELECT COUNT(*) FROM THAM t WHERE t.MaSV = sv.MaSV) AS SoLuotKhachTham,
+               (SELECT COUNT(*) FROM XE x WHERE x.MaSV = sv.MaSV) AS SoXe,
+               (SELECT COUNT(*) FROM DANG_KY_XE_THANG dk
+                WHERE dk.MaSV = sv.MaSV AND dk.NgayKetThuc >= CURDATE()) AS SoVeThangConHan
+        FROM SINHVIEN sv
+        JOIN PHONG p ON p.SoPhong = sv.SoPhong
+        WHERE sv.MaSV = %s
+        """,
+        (student_id,),
+    )
+
+
+def transfer_student(student_id: str, room_id: str) -> None:
+    """Move a student to a room after checking capacity; DB trigger checks too."""
+    connection = connect()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT SoPhong FROM SINHVIEN WHERE MaSV = %s", (student_id,))
+        student = cursor.fetchone()
+        if student is None:
+            raise ValueError(f"Không tìm thấy sinh viên {student_id}.")
+        if student["SoPhong"] == room_id:
+            raise ValueError("Sinh viên hiện đã ở phòng này.")
+        cursor.execute(
+            """SELECT p.SoNguoiToiDa, COUNT(s.MaSV) AS SoDangO
+               FROM PHONG p LEFT JOIN SINHVIEN s ON s.SoPhong = p.SoPhong
+               WHERE p.SoPhong = %s GROUP BY p.SoPhong, p.SoNguoiToiDa""",
+            (room_id,),
+        )
+        room = cursor.fetchone()
+        if room is None:
+            raise ValueError(f"Không tìm thấy phòng {room_id}.")
+        if room["SoDangO"] >= room["SoNguoiToiDa"]:
+            raise ValueError(f"Phòng {room_id} đã đủ người.")
+        cursor.execute("UPDATE SINHVIEN SET SoPhong = %s WHERE MaSV = %s", (room_id, student_id))
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def create_monthly_invoices(month: str) -> tuple[int, int]:
+    """Create one invoice per student for a month, skipping existing invoices."""
+    first_day = date.fromisoformat(f"{month}-01")
+    invoice_date = date(
+        first_day.year, first_day.month,
+        monthrange(first_day.year, first_day.month)[1],
+    )
+    totals = monthly_costs(month)
+    connection = connect()
+    cursor = connection.cursor()
+    created = skipped = 0
+    try:
+        for row in totals:
+            cursor.execute(
+                """SELECT 1 FROM HOADON
+                   WHERE MaSV = %s AND YEAR(NgayLap) = %s AND MONTH(NgayLap) = %s
+                   LIMIT 1""",
+                (row["MaSV"], first_day.year, first_day.month),
+            )
+            if cursor.fetchone():
+                skipped += 1
+                continue
+            cursor.execute(
+                "INSERT INTO HOADON (NgayLap, TongTien, MaSV) VALUES (%s, %s, %s)",
+                (invoice_date, row["TongPhaiTra"], row["MaSV"]),
+            )
+            created += 1
+        connection.commit()
+        return created, skipped
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+
 def add_student(
     student_id: str,
     cccd: str,

@@ -17,6 +17,14 @@ Các tiện ích nhập liệu:
 - Ghi lượt sử dụng dịch vụ; trigger trong CSDL tính tiền.
 - Ghi khách và lượt thăm.
 - Thêm xe và đăng ký vé tháng; kiểm tra giới hạn hai vé còn hạn trước khi lưu.
+- Chuyển sinh viên giữa các phòng, kiểm tra sức chứa.
+
+Tính năng bổ sung:
+
+- Tra cứu hồ sơ sinh viên cùng số lượt sử dụng dịch vụ, khách thăm, xe và vé tháng còn hạn.
+- Xem sức chứa và số chỗ còn trống của tất cả phòng.
+- Xuất các bảng báo cáo ra CSV (mã hóa UTF-8 có BOM để mở thuận tiện trong Excel).
+- Tạo hóa đơn tháng trong `HOADON` từ báo cáo chi phí. Chương trình bỏ qua sinh viên đã có hóa đơn trong tháng để hạn chế ghi trùng khi bấm lại.
 
 ## Yêu cầu
 
