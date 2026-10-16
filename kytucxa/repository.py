@@ -187,7 +187,7 @@ def add_service_use(student_id: str, service_id: str, used_on: str, quantity: in
     connection = connect()
     cursor = connection.cursor()
     try:
-        # SUDUNG_BEFORE_INSERT calculates the amount from the current service price.
+        # SUDUNG_BEFORE_INSERT tự tính số tiền cần thiết
         cursor.execute(
             """
             INSERT INTO SUDUNG (NgaySuDung, SoLuong, TongTienDichVu, MaSV, MaDV)
@@ -236,11 +236,15 @@ def add_visitor_visit(
 
 def register_monthly_vehicle(
     student_id: str, plate: str, vehicle_type: str, start_date: str, end_date: str
-) -> str:
+) -> tuple[str, bool]:
     start = date.fromisoformat(start_date)
     end = date.fromisoformat(end_date)
     if end < start:
         raise ValueError("Ngày kết thúc không được trước ngày bắt đầu.")
+
+    plate = plate.strip().upper()
+    if not plate:
+        raise ValueError("Biển số không được để trống.")
 
     connection = connect()
     cursor = connection.cursor(dictionary=True)
@@ -261,16 +265,47 @@ def register_monthly_vehicle(
 
         cursor.execute(
             """
-            SELECT COALESCE(MAX(CAST(SUBSTRING(MaXe, 3) AS UNSIGNED)), 0) + 1 AS SoTiepTheo
+            SELECT MaXe, MaSV
             FROM XE
-            WHERE MaXe REGEXP '^XE[0-9]{5}$'
-            """
+            WHERE UPPER(REPLACE(BienSo, ' ', '')) = UPPER(REPLACE(%s, ' ', ''))
+            LIMIT 1
+            """,
+            (plate,),
         )
-        vehicle_id = f"XE{cursor.fetchone()['SoTiepTheo']:05d}"
-        cursor.execute(
-            "INSERT INTO XE (MaXe, BienSo, LoaiXe, MaSV) VALUES (%s, %s, %s, %s)",
-            (vehicle_id, plate, vehicle_type, student_id),
-        )
+        existing_vehicle = cursor.fetchone()
+        vehicle_created = existing_vehicle is None
+
+        if existing_vehicle:
+            vehicle_id = existing_vehicle["MaXe"]
+            if existing_vehicle["MaSV"] != student_id:
+                raise ValueError("Biển số này đã được gắn cho sinh viên khác.")
+
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS SoVeTrungThoiGian
+                FROM DANG_KY_XE_THANG
+                WHERE MaXe = %s
+                  AND NgayBatDau <= %s
+                  AND NgayKetThuc >= %s
+                """,
+                (vehicle_id, end_date, start_date),
+            )
+            if cursor.fetchone()["SoVeTrungThoiGian"]:
+                raise ValueError("Xe đã có vé tháng trong khoảng thời gian này.")
+        else:
+            cursor.execute(
+                """
+                SELECT COALESCE(MAX(CAST(SUBSTRING(MaXe, 3) AS UNSIGNED)), 0) + 1 AS SoTiepTheo
+                FROM XE
+                WHERE MaXe REGEXP '^XE[0-9]{5}$'
+                """
+            )
+            vehicle_id = f"XE{cursor.fetchone()['SoTiepTheo']:05d}"
+            cursor.execute(
+                "INSERT INTO XE (MaXe, BienSo, LoaiXe, MaSV) VALUES (%s, %s, %s, %s)",
+                (vehicle_id, plate, vehicle_type, student_id),
+            )
+
         cursor.execute(
             """
             INSERT INTO DANG_KY_XE_THANG
@@ -280,7 +315,7 @@ def register_monthly_vehicle(
             (start_date, end_date, vehicle_id, student_id),
         )
         connection.commit()
-        return vehicle_id
+        return vehicle_id, vehicle_created
     except Exception:
         connection.rollback()
         raise

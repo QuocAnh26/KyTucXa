@@ -1,6 +1,6 @@
 # KyTucXa
 
-Ứng dụng desktop Python cho Project 2: hệ thống quản lý ký túc xá. Giao diện dùng CustomTkinter; dữ liệu đọc/ghi qua MySQL Connector/Python.
+Ứng dụng desktop : hệ thống quản lý ký túc xá. Giao diện dùng CustomTkinter; dữ liệu đọc/ghi qua MySQL Connector/Python.
 
 ## Tính năng
 
@@ -21,8 +21,7 @@ Các tiện ích nhập liệu:
 ## Yêu cầu
 
 - Windows, Python 3.10 trở lên.
-- MySQL Server chạy trên máy local, schema KyTucXa đã được tạo và có các bảng của Project 2.
-- CSDL nên có các trigger trong file dump để tính tiền dịch vụ/xe và kiểm tra sức chứa, số vé tháng. Ứng dụng kiểm tra các điều kiện chính trước khi lưu; khóa ngoại và trigger của MySQL là lớp bảo vệ cuối.
+- MySQL Server chạy trên máy local, schema KyTucXa đã được tạo và có các bảng.
 
 Nếu chưa tạo schema, chạy trong MySQL Workbench:
 
@@ -32,7 +31,6 @@ CREATE DATABASE IF NOT EXISTS KyTucXa
   COLLATE utf8mb4_0900_ai_ci;
 ```
 
-Sau đó import cấu trúc và dữ liệu Project 2 vào schema đó. Nếu dump bắt đầu bằng CREATE DATABASE có tên đặt trong dấu ngoặc kép hoặc dấu nháy đơn, sửa dòng đó sang tên schema không quote như ví dụ trên hoặc bỏ dòng tạo database và chọn KyTucXa làm schema đích khi import.
 
 ## Cài đặt và chạy
 
@@ -58,12 +56,6 @@ python main.py
 
 Nút **Kiểm tra kết nối** trên đầu cửa sổ báo schema/version hoặc lỗi kết nối.
 
-## Lưu ý về cách tính báo cáo
-
-- Bảng SINHVIEN hiện không có cột họ tên, vì vậy danh sách hiển thị MaSV.
-- CSDL không lưu lịch sử chuyển phòng; báo cáo tháng dùng phòng và giá phòng hiện tại cho mọi tháng đã chọn.
-- Vé tháng được tính một lần theo DonGiaThang nếu thời hạn đăng ký giao với tháng báo cáo. Dữ liệu hiện có phù hợp với một bản ghi đăng ký cho mỗi tháng.
-- Phí gửi xe lấy từ LUOT_XE.SoTienPhatSinh theo ngày gửi; dữ liệu xe không vé tháng chỉ được tính nếu hiện diện trong schema.
 
 ## Cấu trúc
 

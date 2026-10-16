@@ -1,4 +1,5 @@
-"""CustomTkinter interface for dormitory reports and data entry."""
+
+"""Giao diện sử dụng CustomTkinter để xuất báo cáo cho chương trình quản lí Ký túc xá và nhập dữ liệu"""
 from __future__ import annotations
 
 import tkinter as tk
@@ -11,8 +12,9 @@ import customtkinter as ctk
 from . import repository
 from .db import connect
 
+# Frame báo cáo (nhận điều kiện rồi truy vấn tạo bảng)
 
-class ReportFrame(ctk.CTkFrame):
+class ReportFrame(ctk.CTkFrame):    
     def __init__(
         self,
         master: Any,
@@ -40,6 +42,7 @@ class ReportFrame(ctk.CTkFrame):
             entry = ctk.CTkEntry(controls, width=130)
             entry.grid(row=0, column=index * 2 + 1, padx=(0, 12), pady=10)
             self.fields[key] = entry
+            
         self.run_button = ctk.CTkButton(controls, text="Xem báo cáo", command=self.run)
         self.run_button.grid(row=0, column=len(fields) * 2, padx=12, pady=10)
 
@@ -66,6 +69,7 @@ class ReportFrame(ctk.CTkFrame):
         self.status.pack(fill="x", padx=14, pady=(0, 8))
         self.pack(fill="both", expand=True)
 
+    # Đặt giá trị của field điều kiện
     def set_field(self, key: str, value: str) -> None:
         field = self.fields[key]
         field.delete(0, "end")
@@ -91,7 +95,7 @@ class ReportFrame(ctk.CTkFrame):
         except Exception as exc:
             messagebox.showerror("Không thể chạy báo cáo", str(exc))
 
-
+# Frame nhập dữ liệu vào database
 class DataEntryFrame(ctk.CTkFrame):
     def __init__(
         self,
@@ -123,7 +127,7 @@ class DataEntryFrame(ctk.CTkFrame):
         form.grid_columnconfigure(1, weight=1)
         form.grid_columnconfigure(3, weight=1)
         ctk.CTkButton(self, text="Lưu", command=lambda: self._submit(submit)).pack(
-            anchor="w", padx=14, pady=8
+            anchor="center", padx=14, pady=8
         )
         self.status = ctk.CTkLabel(self, text="", anchor="w", wraplength=850)
         self.status.pack(anchor="w", padx=14, pady=8)
@@ -181,7 +185,7 @@ class DormitoryApp(ctk.CTk):
             messagebox.showinfo(
                 "Kết nối thành công",
                 f"Đã kết nối tới schema {database_name} trên MySQL {version}.",
-            )
+            ) 
         except Exception as exc:
             messagebox.showerror(
                 "Không kết nối được",
@@ -354,19 +358,21 @@ class DormitoryApp(ctk.CTk):
         )
         return "Đã lưu thông tin khách và ghi nhận lượt thăm."
 
+
     @staticmethod
     def _save_monthly_vehicle(values: dict[str, str]) -> str:
         date.fromisoformat(values["start_date"])
         date.fromisoformat(values["end_date"])
-        vehicle_id = repository.register_monthly_vehicle(
+        vehicle_id, created = repository.register_monthly_vehicle(
             values["student_id"],
             values["plate"],
             values["vehicle_type"],
             values["start_date"],
             values["end_date"],
         )
-        return f"Đã tạo xe {vehicle_id} và đăng ký vé tháng."
-
+        if created:
+            return f"Đã tạo xe {vehicle_id} mới và đăng ký vé tháng."
+        return f"Biển số đã có, đã thêm vé tháng cho xe {vehicle_id}."
 
 def run() -> None:
     app = DormitoryApp()

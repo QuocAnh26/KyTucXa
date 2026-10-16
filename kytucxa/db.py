@@ -1,4 +1,4 @@
-"""Database connection settings for the local dormitory database."""
+"""Kết nối cơ sở dữ liệu KyTucXa."""
 from __future__ import annotations
 
 import os
@@ -8,12 +8,10 @@ from mysql.connector import MySQLConnection
 
 
 def connect() -> MySQLConnection:
-    """Open a connection using localhost/root/blank-password defaults.
-
-    Settings can be overridden with KYTUCXA_DB_* environment variables.
+    """Mở một kết nối qua localhost:3306.
     """
     return mysql.connector.connect(
-        host=os.getenv("KYTUCXA_DB_HOST", "localhost"),
+        host=os.getenv("KYTUCXA_DB_HOST", "localhost"),  #dùng kytucxa_db_host nếu đã đặt, không thì dùng localhost
         port=int(os.getenv("KYTUCXA_DB_PORT", "3306")),
         user=os.getenv("KYTUCXA_DB_USER", "root"),
         password=os.getenv("KYTUCXA_DB_PASSWORD", ""),
@@ -22,3 +20,4 @@ def connect() -> MySQLConnection:
         use_unicode=True,
         autocommit=False,
     )
+
