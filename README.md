@@ -11,20 +11,18 @@ Bốn báo cáo theo yêu cầu Project 2:
 3. Khách đến thăm từng sinh viên và số lượt thăm trong khoảng ngày.
 4. Số lượng sử dụng và doanh thu từng dịch vụ trong tháng.
 
-Các tiện ích nhập liệu:
+Các tiện ích nhập liệu và tính năng bổ sung:
 
 - Thêm sinh viên vào phòng, kiểm tra sức chứa trước khi lưu.
 - Ghi lượt sử dụng dịch vụ; trigger trong CSDL tính tiền.
 - Ghi khách và lượt thăm.
-- Thêm xe và đăng ký vé tháng; kiểm tra giới hạn hai vé còn hạn trước khi lưu.
-- Chuyển sinh viên giữa các phòng, kiểm tra sức chứa.
-
-Tính năng bổ sung:
+- Thêm xe và đăng ký vé tháng; kiểm tra giới hạn hai vé còn hạn trước khi lưu
 
 - Tra cứu hồ sơ sinh viên cùng số lượt sử dụng dịch vụ, khách thăm, xe và vé tháng còn hạn.
 - Xem sức chứa và số chỗ còn trống của tất cả phòng.
 - Xuất các bảng báo cáo ra CSV (mã hóa UTF-8 có BOM để mở thuận tiện trong Excel).
 - Tạo hóa đơn tháng trong `HOADON` từ báo cáo chi phí. Chương trình bỏ qua sinh viên đã có hóa đơn trong tháng để hạn chế ghi trùng khi bấm lại.
+- Chuyển phòng sinh viên
 
 ## Yêu cầu
 
