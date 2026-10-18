@@ -2,7 +2,6 @@
 """Giao diện sử dụng CustomTkinter để xuất báo cáo cho chương trình quản lí Ký túc xá và nhập dữ liệu"""
 from __future__ import annotations
 
-import tkinter as tk
 import csv
 from datetime import date
 from tkinter import filedialog, messagebox, ttk
@@ -35,37 +34,72 @@ class ReportFrame(ctk.CTkFrame):
         self.rows: list[dict[str, Any]] = []
 
         if note:
-            ctk.CTkLabel(self, text=note, anchor="w", wraplength=1000).pack(
-                fill="x", padx=12, pady=(10, 4)
+            ctk.CTkLabel(
+                self, text=note, anchor="w", wraplength=1100,
+                font=ctk.CTkFont(size=13), text_color=("#526174", "#b6c2d2"),
+            ).pack(
+                fill="x", padx=18, pady=(14, 6)
             )
 
-        controls = ctk.CTkFrame(self)
-        controls.pack(fill="x", padx=12, pady=8)
+        controls = ctk.CTkFrame(self, corner_radius=12)
+        controls.pack(fill="x", padx=16, pady=8)
         for index, (key, label) in enumerate(fields):
-            ctk.CTkLabel(controls, text=label).grid(
-                row=0, column=index * 2, padx=(12, 5), pady=10, sticky="e"
+            ctk.CTkLabel(
+                controls, text=label, font=ctk.CTkFont(size=13, weight="bold")
+            ).grid(
+                row=0, column=index * 2, padx=(14, 6), pady=12, sticky="e"
             )
-            entry = ctk.CTkEntry(controls, width=130)
-            entry.grid(row=0, column=index * 2 + 1, padx=(0, 12), pady=10)
+            entry = ctk.CTkEntry(
+                controls, width=155, height=38, font=ctk.CTkFont(size=14),
+                corner_radius=8, placeholder_text=label,
+            )
+            entry.grid(row=0, column=index * 2 + 1, padx=(0, 10), pady=10)
             self.fields[key] = entry
             
-        self.run_button = ctk.CTkButton(controls, text="Xem báo cáo", command=self.run)
-        self.run_button.grid(row=0, column=len(fields) * 2, padx=12, pady=10)
-        ctk.CTkButton(controls, text="Xuất CSV", command=self.export_csv).grid(
+        self.run_button = ctk.CTkButton(
+            controls, text="Xem báo cáo", command=self.run, height=38,
+            corner_radius=8, font=ctk.CTkFont(size=13, weight="bold"),
+        )
+        self.run_button.grid(row=0, column=len(fields) * 2, padx=(10, 6), pady=10)
+        ctk.CTkButton(
+            controls, text="Xuất CSV", command=self.export_csv, height=38,
+            corner_radius=8, fg_color=("#e8eef7", "#263449"),
+            hover_color=("#d8e2f0", "#354761"),
+            text_color=("#26364a", "#e4ebf5"),
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).grid(
             row=0, column=len(fields) * 2 + 1, padx=5, pady=10
         )
         if action:
             ctk.CTkButton(
-                controls, text=action[0], command=self.run_action
+                controls, text=action[0], command=self.run_action, height=38,
+                corner_radius=8, font=ctk.CTkFont(size=13, weight="bold"),
             ).grid(row=0, column=len(fields) * 2 + 2, padx=5, pady=10)
 
-        table_frame = ctk.CTkFrame(self)
-        table_frame.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        table_frame = ctk.CTkFrame(self, corner_radius=12)
+        table_frame.pack(fill="both", expand=True, padx=16, pady=(2, 10))
+        style = ttk.Style(self)
+        style.theme_use("clam")
+        style.configure(
+            "KyTucXa.Treeview", font=("Segoe UI", 12), rowheight=34,
+            background="#ffffff", fieldbackground="#ffffff", foreground="#243247",
+            borderwidth=0,
+        )
+        style.configure(
+            "KyTucXa.Treeview.Heading", font=("Segoe UI", 12, "bold"),
+            background="#eaf0f8", foreground="#26364a", relief="flat", padding=(9, 9),
+        )
+        style.map(
+            "KyTucXa.Treeview",
+            background=[("selected", "#cfe0ff")],
+            foreground=[("selected", "#172b4d")],
+        )
         self.tree = ttk.Treeview(
             table_frame,
             columns=[key for key, _, _ in columns],
             show="headings",
             height=18,
+            style="KyTucXa.Treeview",
         )
         vertical = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
         horizontal = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree.xview)
@@ -75,11 +109,23 @@ class ReportFrame(ctk.CTkFrame):
         horizontal.grid(row=1, column=0, sticky="ew")
         table_frame.grid_rowconfigure(0, weight=1)
         table_frame.grid_columnconfigure(0, weight=1)
+        numeric_prefixes = (
+            "Tien", "Tong", "DonGia", "SoLuong", "SoLan", "SoNguoi",
+            "ChoTrong", "DoanhThu", "SoVe", "SoXe",
+        )
         for key, title, width in columns:
-            self.tree.heading(key, text=title)
-            self.tree.column(key, width=width, minwidth=80, anchor="w")
-        self.status = ctk.CTkLabel(self, text="", anchor="w")
-        self.status.pack(fill="x", padx=14, pady=(0, 8))
+            self.tree.heading(key, text=title, anchor="w")
+            anchor = "e" if key.startswith(numeric_prefixes) else "w"
+            self.tree.column(
+                key, width=max(width, 100), minwidth=90, anchor=anchor, stretch=True
+            )
+        self.tree.tag_configure("odd", background="#f4f7fb")
+        self.tree.tag_configure("even", background="#ffffff")
+        self.status = ctk.CTkLabel(
+            self, text="", anchor="w", font=ctk.CTkFont(size=12),
+            text_color=("#526174", "#b6c2d2"),
+        )
+        self.status.pack(fill="x", padx=18, pady=(0, 10))
         self.pack(fill="both", expand=True)
 
     # Đặt giá trị của field điều kiện
@@ -96,14 +142,14 @@ class ReportFrame(ctk.CTkFrame):
             rows = self.runner(values)
             self.rows = rows
             self.tree.delete(*self.tree.get_children())
-            for row in rows:
+            for index, row in enumerate(rows):
                 cells = []
                 for key, _, _ in self.columns:
                     value = row.get(key, "")
                     if isinstance(value, (int, float)):
                         value = f"{value:,}"
                     cells.append("" if value is None else str(value))
-                self.tree.insert("", "end", values=cells)
+                self.tree.insert("", "end", values=cells, tags=("even" if index % 2 else "odd",))
             self.status.configure(text=f"Có {len(rows)} dòng.")
         except Exception as exc:
             messagebox.showerror("Không thể chạy báo cáo", str(exc))
@@ -151,31 +197,44 @@ class DataEntryFrame(ctk.CTkFrame):
         note: str = "",
     ) -> None:
         super().__init__(master, fg_color="transparent")
-        ctk.CTkLabel(self, text=title, font=ctk.CTkFont(size=18, weight="bold")).pack(
-            anchor="w", padx=14, pady=(14, 6)
+        ctk.CTkLabel(self, text=title, font=ctk.CTkFont(size=21, weight="bold")).pack(
+            anchor="w", padx=20, pady=(20, 8)
         )
         if note:
-            ctk.CTkLabel(self, text=note, anchor="w", wraplength=850).pack(
-                anchor="w", padx=14, pady=(0, 8)
+            ctk.CTkLabel(
+                self, text=note, anchor="w", wraplength=1000,
+                font=ctk.CTkFont(size=13), text_color=("#526174", "#b6c2d2"),
+            ).pack(
+                anchor="w", padx=20, pady=(0, 10)
             )
         self.entries: dict[str, ctk.CTkEntry] = {}
-        form = ctk.CTkFrame(self)
-        form.pack(fill="x", padx=14, pady=8)
+        form = ctk.CTkFrame(self, corner_radius=12)
+        form.pack(fill="x", padx=18, pady=10)
         for index, (key, label) in enumerate(fields):
             row, col = divmod(index, 2)
-            ctk.CTkLabel(form, text=label).grid(
-                row=row, column=col * 2, padx=(12, 5), pady=9, sticky="e"
+            ctk.CTkLabel(
+                form, text=label, font=ctk.CTkFont(size=13, weight="bold")
+            ).grid(
+                row=row, column=col * 2, padx=(16, 7), pady=11, sticky="e"
             )
-            entry = ctk.CTkEntry(form, width=220)
-            entry.grid(row=row, column=col * 2 + 1, padx=(0, 16), pady=9, sticky="ew")
+            entry = ctk.CTkEntry(
+                form, width=240, height=40, font=ctk.CTkFont(size=14), corner_radius=8
+            )
+            entry.grid(row=row, column=col * 2 + 1, padx=(0, 18), pady=10, sticky="ew")
             self.entries[key] = entry
         form.grid_columnconfigure(1, weight=1)
         form.grid_columnconfigure(3, weight=1)
-        ctk.CTkButton(self, text="Lưu", command=lambda: self._submit(submit)).pack(
-            anchor="center", padx=14, pady=8
+        ctk.CTkButton(
+            self, text="Lưu thông tin", command=lambda: self._submit(submit),
+            height=40, width=170, corner_radius=9,
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).pack(
+            anchor="center", padx=18, pady=12
         )
-        self.status = ctk.CTkLabel(self, text="", anchor="w", wraplength=850)
-        self.status.pack(anchor="w", padx=14, pady=8)
+        self.status = ctk.CTkLabel(
+            self, text="", anchor="w", wraplength=1000, font=ctk.CTkFont(size=13)
+        )
+        self.status.pack(anchor="w", padx=20, pady=10)
         self.pack(fill="both", expand=True)
 
     def _submit(self, action: Callable[[dict[str, str]], str]) -> None:
@@ -195,27 +254,37 @@ class DormitoryApp(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Quản lý ký túc xá")
-        self.geometry("1180x760")
-        self.minsize(900, 620)
-        ctk.set_appearance_mode("System")
+        self.geometry("1360x850")
+        self.minsize(1040, 700)
+        ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
 
-        header = ctk.CTkFrame(self)
-        header.pack(fill="x", padx=14, pady=(14, 6))
+        header = ctk.CTkFrame(self, corner_radius=16, fg_color=("#ffffff", "#202b3b"))
+        header.pack(fill="x", padx=18, pady=(18, 8))
+        title_block = ctk.CTkFrame(header, fg_color="transparent")
+        title_block.pack(side="left", padx=18, pady=14)
         ctk.CTkLabel(
-            header,
-            text="Hệ thống quản lý ký túc xá",
-            font=ctk.CTkFont(size=22, weight="bold"),
-        ).pack(side="left", padx=14, pady=12)
+            title_block,
+            text="Ký túc xá", font=ctk.CTkFont(size=26, weight="bold"),
+            text_color="#17365d",
+        ).pack(anchor="w")
         ctk.CTkLabel(
-            header, text="MySQL localhost:3306 · root · không mật khẩu"
-        ).pack(side="left", padx=12)
-        ctk.CTkButton(header, text="Kiểm tra kết nối", command=self.check_connection).pack(
-            side="right", padx=12, pady=8
+            title_block, text="Quản lý sinh viên · dịch vụ · phòng ở",
+            font=ctk.CTkFont(size=13), text_color="#64748b",
+        ).pack(anchor="w", pady=(2, 0))
+        ctk.CTkLabel(
+            header, text="MySQL  ·  localhost:3306  ·  KyTucXa",
+            font=ctk.CTkFont(size=12), text_color="#64748b",
+        ).pack(side="left", padx=22)
+        ctk.CTkButton(
+            header, text="Kiểm tra kết nối", command=self.check_connection,
+            height=40, corner_radius=9, font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(
+            side="right", padx=18, pady=14
         )
 
-        self.tabs = ctk.CTkTabview(self)
-        self.tabs.pack(fill="both", expand=True, padx=14, pady=(4, 14))
+        self.tabs = ctk.CTkTabview(self, corner_radius=14, border_width=0)
+        self.tabs.pack(fill="both", expand=True, padx=18, pady=(4, 18))
         self._build_reports()
         self._build_entry_forms()
 
