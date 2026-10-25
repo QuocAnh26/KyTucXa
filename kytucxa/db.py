@@ -1,5 +1,5 @@
 """Kết nối cơ sở dữ liệu KyTucXa."""
-from __future__ import annotations
+from __future__ import annotations #trì hoãn đánh giá các chú thích
 
 import os
 
