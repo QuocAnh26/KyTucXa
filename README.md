@@ -29,25 +29,12 @@ Các tiện ích nhập liệu và tính năng bổ sung:
 - Windows, Python 3.10 trở lên.
 - MySQL Server chạy trên máy local, schema KyTucXa đã được tạo và có các bảng.
 
-Nếu chưa tạo schema, chạy trong MySQL Workbench:
-
-```sql
-CREATE DATABASE IF NOT EXISTS KyTucXa
-  DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_0900_ai_ci;
-```
-Rồi Server -> Data Import -> Import from Self-contained File -> chọn KyTucXa_import.sql -> Để trống Default Target Schema -> Start import
+Chọn tab Server -> Data Import -> Import from Self-contained File -> chọn KyTucXa_import.sql -> Để trống Default Target Schema -> Start import
 
 ## Cài đặt và chạy
 
-Mở PowerShell tại thư mục repo:
+Chạy run.bat (Tự động cài đặt môi trường và mở app)
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python main.py
-```
 
 Mặc định ứng dụng kết nối localhost:3306, user root, mật khẩu trống, database KyTucXa. Nếu cấu hình MySQL khác, đặt biến môi trường trước khi chạy:
 

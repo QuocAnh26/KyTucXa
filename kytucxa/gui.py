@@ -114,10 +114,10 @@ class ReportFrame(ctk.CTkFrame):
             "ChoTrong", "DoanhThu", "SoVe", "SoXe",
         )
         for key, title, width in columns:
-            self.tree.heading(key, text=title, anchor="w")
-            anchor = "e" if key.startswith(numeric_prefixes) else "w"
+            self.tree.heading(key, text=title, anchor="center")
+            # anchor = "e" if key.startswith(numeric_prefixes) else "w"
             self.tree.column(
-                key, width=max(width, 100), minwidth=90, anchor=anchor, stretch=True
+                key, width=max(width, 100), minwidth=90, anchor="center", stretch=True
             )
         self.tree.tag_configure("odd", background="#f4f7fb")
         self.tree.tag_configure("even", background="#ffffff")
