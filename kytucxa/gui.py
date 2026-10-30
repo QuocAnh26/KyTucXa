@@ -1,4 +1,3 @@
-
 """Giao diện sử dụng CustomTkinter để xuất báo cáo cho chương trình quản lí Ký túc xá và nhập dữ liệu"""
 from __future__ import annotations
 
@@ -12,18 +11,149 @@ import customtkinter as ctk
 from . import repository
 from .db import connect
 
-# Frame báo cáo (nhận điều kiện rồi truy vấn tạo bảng)
 
-class ReportFrame(ctk.CTkFrame):    
+# --- WIDGET SƠ ĐỒ PHÒNG DẠNG LƯỚI (ROOM GRID) ---
+class RoomGridFrame(ctk.CTkFrame):
+    def __init__(self, master: Any) -> None:
+        super().__init__(master, fg_color="transparent")
+
+        # Thanh công cụ trên cùng
+        top_bar = ctk.CTkFrame(self, corner_radius=12)
+        top_bar.pack(fill="x", padx=16, pady=10)
+
+        ctk.CTkLabel(
+            top_bar, text="Sơ đồ phòng KTX", font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(side="left", padx=16, pady=10)
+
+        ctk.CTkButton(
+            top_bar, text="Tải lại sơ đồ", command=self.load_grid, height=36,
+            corner_radius=8, font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(side="right", padx=16, pady=10)
+
+        # Chú thích màu sắc
+        legend = ctk.CTkFrame(top_bar, fg_color="transparent")
+        legend.pack(side="right", padx=20)
+
+        ctk.CTkLabel(legend, text="■ Đã đầy", text_color="#D9534F", font=("Segoe UI", 12, "bold")).pack(side="right", padx=8)
+        ctk.CTkLabel(legend, text="■ Còn trống", text_color="#28A745", font=("Segoe UI", 12, "bold")).pack(side="right", padx=8)
+
+        # Khung chứa danh sách các ô phòng có hỗ trợ cuộn (Scrollable)
+        self.grid_scroll = ctk.CTkScrollableFrame(self, corner_radius=12)
+        self.grid_scroll.pack(fill="both", expand=True, padx=16, pady=(0, 10))
+
+        self.load_grid()
+
+        # Hiển thị frame lên giao diện mẹ
+        self.pack(fill="both", expand=True)
+
+    def load_grid(self) -> None:
+        # Xóa các ô phòng cũ
+        for widget in self.grid_scroll.winfo_children():
+            widget.destroy()
+
+        try:
+            rooms = repository.room_occupancy()
+            row, col = 0, 0
+            max_cols = 5  # Hiển thị 5 phòng trên 1 hàng
+
+            for room in rooms:
+                so_phong = str(room.get("SoPhong", ""))
+                loai_phong = str(room.get("LoaiPhong", ""))
+                dang_o = int(room.get("SoNguoiDangO", 0))
+                toi_da = int(room.get("SoNguoiToiDa", 0))
+
+                # Đổi màu ô dựa trên sức chứa
+                if dang_o >= toi_da:
+                    bg_color = "#D9534F"  # Đỏ: Đã đầy
+                    hover_color = "#C9302C"
+                else:
+                    bg_color = "#28A745"  # Xanh: Còn trống
+                    hover_color = "#218838"
+
+                # Tạo nút bấm đại diện cho phòng
+                btn_text = f"Phòng {so_phong}\n{loai_phong}\n({dang_o}/{toi_da} SV)"
+                room_btn = ctk.CTkButton(
+                    self.grid_scroll,
+                    text=btn_text,
+                    fg_color=bg_color,
+                    hover_color=hover_color,
+                    width=170,
+                    height=95,
+                    corner_radius=10,
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    command=lambda p=so_phong: self.show_room_details(p)
+                )
+                room_btn.grid(row=row, column=col, padx=12, pady=12)
+
+                col += 1
+                if col >= max_cols:
+                    col = 0
+                    row += 1
+
+        except Exception as exc:
+            messagebox.showerror("Lỗi tải sơ đồ phòng", str(exc))
+
+    def show_room_details(self, so_phong: str) -> None:
+        """Hiển thị cửa sổ pop-up danh sách sinh viên trong phòng khi nhấp chọn."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title(f"Chi tiết Phòng {so_phong}")
+        dialog.geometry("550x380")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog, text=f"Danh sách sinh viên phòng {so_phong}",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(padx=16, pady=12)
+
+        table_frame = ctk.CTkFrame(dialog, corner_radius=8)
+        table_frame.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+
+        tree = ttk.Treeview(
+            table_frame,
+            columns=["MaSV", "CCCD", "Lop", "QueQuan"],
+            show="headings",
+            height=8
+        )
+        tree.heading("MaSV", text="Mã SV")
+        tree.heading("CCCD", text="CCCD")
+        tree.heading("Lop", text="Lớp")
+        tree.heading("QueQuan", text="Quê quán")
+
+        tree.column("MaSV", width=80, anchor="center")
+        tree.column("CCCD", width=120, anchor="center")
+        tree.column("Lop", width=90, anchor="center")
+        tree.column("QueQuan", width=140, anchor="center")
+
+        tree.pack(fill="both", expand=True, padx=8, pady=8)
+
+        # Lấy dữ liệu hồ sơ sinh viên để lọc theo số phòng
+        try:
+            all_students = repository.student_summary("")
+            room_students = [s for s in all_students if str(s.get("SoPhong", "")) == str(so_phong)]
+
+            for index, sv in enumerate(room_students):
+                tree.insert("", "end", values=[
+                    sv.get("MaSV", ""),
+                    sv.get("SV_CCCD", ""),
+                    sv.get("Lop", ""),
+                    sv.get("QueQuan", "")
+                ])
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể lấy thông tin sinh viên: {e}")
+
+
+# Frame báo cáo (nhận điều kiện rồi truy vấn tạo bảng)
+class ReportFrame(ctk.CTkFrame):
     def __init__(
-        self,
-        master: Any,
-        columns: list[tuple[str, str, int]],
-        runner: Callable[[dict[str, str]], list[dict[str, Any]]],
-        fields: list[tuple[str, str]],
-        note: str = "",
-        require_fields: bool = True,
-        action: tuple[str, Callable[[dict[str, str]], str]] | None = None,
+            self,
+            master: Any,
+            columns: list[tuple[str, str, int]],
+            runner: Callable[[dict[str, str]], list[dict[str, Any]]],
+            fields: list[tuple[str, str]],
+            note: str = "",
+            require_fields: bool = True,
+            action: tuple[str, Callable[[dict[str, str]], str]] | None = None,
     ) -> None:
         super().__init__(master, fg_color="transparent")
         self.columns = columns
@@ -55,7 +185,7 @@ class ReportFrame(ctk.CTkFrame):
             )
             entry.grid(row=0, column=index * 2 + 1, padx=(0, 10), pady=10)
             self.fields[key] = entry
-            
+
         self.run_button = ctk.CTkButton(
             controls, text="Xem báo cáo", command=self.run, height=38,
             corner_radius=8, font=ctk.CTkFont(size=13, weight="bold"),
@@ -109,13 +239,9 @@ class ReportFrame(ctk.CTkFrame):
         horizontal.grid(row=1, column=0, sticky="ew")
         table_frame.grid_rowconfigure(0, weight=1)
         table_frame.grid_columnconfigure(0, weight=1)
-        numeric_prefixes = (
-            "Tien", "Tong", "DonGia", "SoLuong", "SoLan", "SoNguoi",
-            "ChoTrong", "DoanhThu", "SoVe", "SoXe",
-        )
+
         for key, title, width in columns:
             self.tree.heading(key, text=title, anchor="center")
-            # anchor = "e" if key.startswith(numeric_prefixes) else "w"
             self.tree.column(
                 key, width=max(width, 100), minwidth=90, anchor="center", stretch=True
             )
@@ -128,7 +254,6 @@ class ReportFrame(ctk.CTkFrame):
         self.status.pack(fill="x", padx=18, pady=(0, 10))
         self.pack(fill="both", expand=True)
 
-    # Đặt giá trị của field điều kiện
     def set_field(self, key: str, value: str) -> None:
         field = self.fields[key]
         field.delete(0, "end")
@@ -186,15 +311,16 @@ class ReportFrame(ctk.CTkFrame):
         except Exception as exc:
             messagebox.showerror(self.action[0], str(exc))
 
+
 # Frame nhập dữ liệu vào database
 class DataEntryFrame(ctk.CTkFrame):
     def __init__(
-        self,
-        master: Any,
-        title: str,
-        fields: list[tuple[str, str]],
-        submit: Callable[[dict[str, str]], str],
-        note: str = "",
+            self,
+            master: Any,
+            title: str,
+            fields: list[tuple[str, str]],
+            submit: Callable[[dict[str, str]], str],
+            note: str = "",
     ) -> None:
         super().__init__(master, fg_color="transparent")
         ctk.CTkLabel(self, text=title, font=ctk.CTkFont(size=21, weight="bold")).pack(
@@ -299,7 +425,7 @@ class DormitoryApp(ctk.CTk):
             messagebox.showinfo(
                 "Kết nối thành công",
                 f"Đã kết nối tới schema {database_name} trên MySQL {version}.",
-            ) 
+            )
         except Exception as exc:
             messagebox.showerror(
                 "Không kết nối được",
@@ -315,6 +441,11 @@ class DormitoryApp(ctk.CTk):
         first_day = today.replace(day=1).isoformat()
         last_day = today.isoformat()
 
+        # TAB 1: Sơ đồ phòng trực quan (Lưới)
+        grid_tab = subtabs.add("Sơ đồ phòng (Lưới)")
+        RoomGridFrame(grid_tab)
+
+        # TAB 2: Chi phí tháng
         pane = ReportFrame(
             subtabs.add("Chi phí tháng"),
             [
@@ -333,6 +464,7 @@ class DormitoryApp(ctk.CTk):
         )
         pane.set_field("month", month)
 
+        # TAB 3: Sức chứa phòng dạng bảng
         ReportFrame(
             subtabs.add("Sức chứa phòng"),
             [
@@ -349,6 +481,7 @@ class DormitoryApp(ctk.CTk):
             require_fields=False,
         )
 
+        # TAB 4: Hồ sơ sinh viên
         pane = ReportFrame(
             subtabs.add("Hồ sơ sinh viên"),
             [
@@ -365,6 +498,7 @@ class DormitoryApp(ctk.CTk):
             "Tra cứu thông tin cơ bản và số liệu hoạt động liên quan của một sinh viên.",
         )
 
+        # TAB 5: Dịch vụ theo kỳ
         pane = ReportFrame(
             subtabs.add("Dịch vụ theo kỳ"),
             [
@@ -380,6 +514,7 @@ class DormitoryApp(ctk.CTk):
         pane.set_field("start", first_day)
         pane.set_field("end", last_day)
 
+        # TAB 6: Khách thăm
         pane = ReportFrame(
             subtabs.add("Khách thăm"),
             [
@@ -394,6 +529,7 @@ class DormitoryApp(ctk.CTk):
         pane.set_field("start", first_day)
         pane.set_field("end", last_day)
 
+        # TAB 7: Doanh thu dịch vụ
         pane = ReportFrame(
             subtabs.add("Doanh thu dịch vụ"),
             [
@@ -525,7 +661,6 @@ class DormitoryApp(ctk.CTk):
         )
         return "Đã lưu thông tin khách và ghi nhận lượt thăm."
 
-
     @staticmethod
     def _save_monthly_vehicle(values: dict[str, str]) -> str:
         date.fromisoformat(values["start_date"])
@@ -540,6 +675,7 @@ class DormitoryApp(ctk.CTk):
         if created:
             return f"Đã tạo xe {vehicle_id} mới và đăng ký vé tháng."
         return f"Biển số đã có, đã thêm vé tháng cho xe {vehicle_id}."
+
 
 def run() -> None:
     app = DormitoryApp()

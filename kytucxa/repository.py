@@ -1,8 +1,8 @@
 """Queries and write operations for the KyTucXa application."""
 from __future__ import annotations
 
-from datetime import date
 from calendar import monthrange
+from datetime import date
 from typing import Any
 
 from .db import connect
@@ -25,10 +25,15 @@ def _validated_range(start: str, end: str) -> tuple[str, str]:
         raise ValueError("Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.")
     return first.isoformat(), last.isoformat()
 
+
 def monthly_costs(month: str) -> list[dict[str, Any]]:
     """Return each student's room, services, monthly passes, parking and total."""
     first_day = date.fromisoformat(f"{month}-01")
-    last_day = date(first_day.year, first_day.month, monthrange(first_day.year, first_day.month)[1])
+    last_day = date(
+        first_day.year,
+        first_day.month,
+        monthrange(first_day.year, first_day.month)[1],
+    )
     start, end = first_day.isoformat(), last_day.isoformat()
 
     sql = """
@@ -103,7 +108,11 @@ def visitor_summary(start: str, end: str) -> list[dict[str, Any]]:
 
 def service_revenue(month: str) -> list[dict[str, Any]]:
     first_day = date.fromisoformat(f"{month}-01")
-    last_day = date(first_day.year, first_day.month, monthrange(first_day.year, first_day.month)[1])
+    last_day = date(
+        first_day.year,
+        first_day.month,
+        monthrange(first_day.year, first_day.month)[1],
+    )
     start, end = first_day.isoformat(), last_day.isoformat()
     sql = """
         SELECT dv.MaDV, dv.TenDV, dv.DonGia,
@@ -156,9 +165,8 @@ def room_occupancy() -> list[dict[str, Any]]:
 
 
 def student_summary(student_id: str) -> list[dict[str, Any]]:
-    """Return a compact student profile with related activity counts."""
-    return _read_all(
-        """
+    """Return a compact student profile with related activity counts or all students if student_id is empty."""
+    sql = """
         SELECT sv.MaSV, sv.SV_CCCD, sv.Lop, sv.NgaySinh, sv.QueQuan,
                sv.SoPhong, p.LoaiPhong, p.DonGiaThang,
                (SELECT COUNT(*) FROM SUDUNG sd WHERE sd.MaSV = sv.MaSV) AS SoLuotDichVu,
@@ -168,10 +176,13 @@ def student_summary(student_id: str) -> list[dict[str, Any]]:
                 WHERE dk.MaSV = sv.MaSV AND dk.NgayKetThuc >= CURDATE()) AS SoVeThangConHan
         FROM SINHVIEN sv
         JOIN PHONG p ON p.SoPhong = sv.SoPhong
-        WHERE sv.MaSV = %s
-        """,
-        (student_id,),
-    )
+    """
+    if student_id.strip():
+        sql += " WHERE sv.MaSV = %s ORDER BY sv.MaSV"
+        return _read_all(sql, (student_id.strip(),))
+    else:
+        sql += " ORDER BY sv.MaSV"
+        return _read_all(sql, ())
 
 
 def transfer_student(student_id: str, room_id: str) -> None:
@@ -196,7 +207,10 @@ def transfer_student(student_id: str, room_id: str) -> None:
             raise ValueError(f"Không tìm thấy phòng {room_id}.")
         if room["SoDangO"] >= room["SoNguoiToiDa"]:
             raise ValueError(f"Phòng {room_id} đã đủ người.")
-        cursor.execute("UPDATE SINHVIEN SET SoPhong = %s WHERE MaSV = %s", (room_id, student_id))
+        cursor.execute(
+            "UPDATE SINHVIEN SET SoPhong = %s WHERE MaSV = %s",
+            (room_id, student_id),
+        )
         connection.commit()
     except Exception:
         connection.rollback()
@@ -210,7 +224,8 @@ def create_monthly_invoices(month: str) -> tuple[int, int]:
     """Create one invoice per student for a month, skipping existing invoices."""
     first_day = date.fromisoformat(f"{month}-01")
     invoice_date = date(
-        first_day.year, first_day.month,
+        first_day.year,
+        first_day.month,
         monthrange(first_day.year, first_day.month)[1],
     )
     totals = monthly_costs(month)
@@ -241,6 +256,7 @@ def create_monthly_invoices(month: str) -> tuple[int, int]:
     finally:
         cursor.close()
         connection.close()
+
 
 def add_student(
     student_id: str,
@@ -285,13 +301,14 @@ def add_student(
         connection.close()
 
 
-def add_service_use(student_id: str, service_id: str, used_on: str, quantity: int) -> None:
+def add_service_use(
+    student_id: str, service_id: str, used_on: str, quantity: int
+) -> None:
     if quantity <= 0:
         raise ValueError("Số lượng phải lớn hơn 0.")
     connection = connect()
     cursor = connection.cursor()
     try:
-        # SUDUNG_BEFORE_INSERT tự tính số tiền cần thiết
         cursor.execute(
             """
             INSERT INTO SUDUNG (NgaySuDung, SoLuong, TongTienDichVu, MaSV, MaDV)
@@ -309,7 +326,11 @@ def add_service_use(student_id: str, service_id: str, used_on: str, quantity: in
 
 
 def add_visitor_visit(
-    cccd: str, guest_name: str, birth_date: str, student_id: str, visit_date: str
+    cccd: str,
+    guest_name: str,
+    birth_date: str,
+    student_id: str,
+    visit_date: str,
 ) -> None:
     connection = connect()
     cursor = connection.cursor()
@@ -339,7 +360,11 @@ def add_visitor_visit(
 
 
 def register_monthly_vehicle(
-    student_id: str, plate: str, vehicle_type: str, start_date: str, end_date: str
+    student_id: str,
+    plate: str,
+    vehicle_type: str,
+    start_date: str,
+    end_date: str,
 ) -> tuple[str, bool]:
     start = date.fromisoformat(start_date)
     end = date.fromisoformat(end_date)

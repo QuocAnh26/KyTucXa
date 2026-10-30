@@ -2,7 +2,7 @@
 --
 -- Host: mysql-361c2bb2-patrolislove-4617.f.aivencloud.com    Database: KyTucXa
 -- ------------------------------------------------------
--- Server version	8.4.8
+-- Server version   8.4.8
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -65,7 +65,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `trg_dk_xe_toi_da_2_bi` BEFORE INSERT ON `DANG_KY_XE_THANG` FOR EACH ROW BEGIN
+/*!50003 CREATE TRIGGER `trg_dk_xe_toi_da_2_bi` BEFORE INSERT ON `DANG_KY_XE_THANG` FOR EACH ROW BEGIN
     DECLARE so_dang_ky_chua_het_han INT DEFAULT 0;
 
     IF NEW.MaSV IS NULL OR NEW.NgayBatDau IS NULL OR NEW.NgayKetThuc IS NULL THEN
@@ -104,7 +104,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `trg_dk_xe_toi_da_2_bu` BEFORE UPDATE ON `DANG_KY_XE_THANG` FOR EACH ROW BEGIN
+/*!50003 CREATE TRIGGER `trg_dk_xe_toi_da_2_bu` BEFORE UPDATE ON `DANG_KY_XE_THANG` FOR EACH ROW BEGIN
     DECLARE so_dang_ky_chua_het_han INT DEFAULT 0;
 
     IF NEW.MaSV IS NULL OR NEW.NgayBatDau IS NULL OR NEW.NgayKetThuc IS NULL THEN
@@ -257,31 +257,31 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `them_luot_xe` BEFORE INSERT ON `LUOT_XE` FOR EACH ROW BEGIN
+/*!50003 CREATE TRIGGER `them_luot_xe` BEFORE INSERT ON `LUOT_XE` FOR EACH ROW BEGIN
     declare coDK int;
     declare dem_luot int;
-    
+
     select count(*)
     into coDK
     from DANG_KY_XE_THANG dk
     where date(dk.NgayBatDau) <= curdate() and
-			curdate() <= date(dk.NgayKetThuc)
+          curdate() <= date(dk.NgayKetThuc)
             and new.MaXe = dk.MaXe;
-	
+
     if coDK >= 1 then
         select count(*)
         into dem_luot
         from LUOT_XE lx
         where lx.MaXe = new.MaXe
         and date(ThoiGianGui) = curdate();
-        
+
         if dem_luot >= 2 then
-			set new.SoTienPhatSinh = 3000;
-		else set new.SoTienPhatSinh = 0;
-		end if;
-	else set new.SoTienPhatSinh = 3000;
+          set new.SoTienPhatSinh = 3000;
+       else set new.SoTienPhatSinh = 0;
+       end if;
+    else set new.SoTienPhatSinh = 3000;
     end if;
-    
+
 END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -356,7 +356,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `SINHVIEN_BEFORE_INSERT` BEFORE INSERT ON `SINHVIEN` FOR EACH ROW BEGIN
+/*!50003 CREATE TRIGGER `SINHVIEN_BEFORE_INSERT` BEFORE INSERT ON `SINHVIEN` FOR EACH ROW BEGIN
   DECLARE v_suc_chua INT;
   DECLARE v_so_sv INT;
 
@@ -389,7 +389,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `SINHVIEN_BEFORE_UPDATE_PHONG` BEFORE UPDATE ON `SINHVIEN` FOR EACH ROW BEGIN
+/*!50003 CREATE TRIGGER `SINHVIEN_BEFORE_UPDATE_PHONG` BEFORE UPDATE ON `SINHVIEN` FOR EACH ROW BEGIN
   DECLARE v_suc_chua INT;
   DECLARE v_so_sv INT;
 
@@ -458,14 +458,14 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `SUDUNG_BEFORE_INSERT` BEFORE INSERT ON `SUDUNG` FOR EACH ROW BEGIN
-	declare dongiadv int;
-    
+/*!50003 CREATE TRIGGER `SUDUNG_BEFORE_INSERT` BEFORE INSERT ON `SUDUNG` FOR EACH ROW BEGIN
+    declare dongiadv int;
+
     select DonGia
     into dongiadv
     from DICHVU dv
     where new.MaDV = dv.MaDV;
-    
+
     set new.TongTienDichVu = new.SoLuong * dongiadv;
 END */;;
 DELIMITER ;
@@ -482,7 +482,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`avnadmin`@`%`*/ /*!50003 TRIGGER `SUDUNG_BEFORE_UPDATE` BEFORE UPDATE ON `SUDUNG` FOR EACH ROW BEGIN
+/*!50003 CREATE TRIGGER `SUDUNG_BEFORE_UPDATE` BEFORE UPDATE ON `SUDUNG` FOR EACH ROW BEGIN
   DECLARE v_don_gia INT;
 
   SELECT DonGia INTO v_don_gia
@@ -554,6 +554,37 @@ LOCK TABLES `XE` WRITE;
 /*!40000 ALTER TABLE `XE` DISABLE KEYS */;
 INSERT INTO `XE` VALUES ('XE00001','29A-00001','Xe may','SV00001'),('XE00002','29A-00002','Xe may','SV00001'),('XE00003','15A-00003','Xe may','SV00002'),('XE00004','43A-00004','Xe may','SV00003'),('XE00005','18A-00005','Xe may','SV00004'),('XE00006','65A-00006','Xe may','SV00005'),('XE00007','75A-00007','Xe may','SV00006'),('XE00008','15A-00008','Xe may','SV00002'),('XE00009','14A-00009','Xe may','SV00007'),('XE00010','35A-00010','Xe may','SV00008'),('XE00011','77A-00011','Xe may','SV00009'),('XE00012','49A-00012','Xe may','SV00010');
 /*!40000 ALTER TABLE `XE` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `TAI_KHOAN`
+--
+
+DROP TABLE IF EXISTS `TAI_KHOAN`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `TAI_KHOAN` (
+  `TenDangNhap` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `MatKhau` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `VaiTro` enum('Admin','SinhVien') CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'SinhVien',
+  `MaSV` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`TenDangNhap`),
+  KEY `fk_TAIKHOAN_SV` (`MaSV`),
+  CONSTRAINT `fk_TAIKHOAN_SV` FOREIGN KEY (`MaSV`) REFERENCES `SINHVIEN` (`MaSV`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `TAI_KHOAN`
+--
+
+LOCK TABLES `TAI_KHOAN` WRITE;
+/*!40000 ALTER TABLE `TAI_KHOAN` DISABLE KEYS */;
+INSERT INTO `TAI_KHOAN` VALUES
+('admin','admin123','Admin',NULL),
+('sv001','123456','SinhVien','SV00001'),
+('sv002','123456','SinhVien','SV00002');
+/*!40000 ALTER TABLE `TAI_KHOAN` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
