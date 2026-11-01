@@ -15,7 +15,7 @@ def connect() -> MySQLConnection:
             user=os.getenv("KYTUCXA_DB_USER", "root"),
 
             # ⬇️ ĐỔI MẬT KHẨU MYSQL CỦA BẠN VÀO ĐÂY (nếu không có mật khẩu thì để "")
-            password=os.getenv("KYTUCXA_DB_PASSWORD", "chichi2kkaka"),
+            password=os.getenv("KYTUCXA_DB_PASSWORD", ""),
 
             # Lưu ý: Tên database phải khớp với tên trong MySQL Workbench / phpMyAdmin
             database=os.getenv("KYTUCXA_DB_NAME", "KyTucXa"),
