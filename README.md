@@ -29,23 +29,36 @@ Các tiện ích nhập liệu và tính năng bổ sung:
 - Windows, Python 3.10 trở lên.
 - MySQL Server chạy trên máy local, schema KyTucXa đã được tạo và có các bảng.
 
-Chọn tab Server -> Data Import -> Import from Self-contained File -> chọn KyTucXa_import.sql -> Để trống Default Target Schema -> Start import
+- Nếu chưa import KyTucXa_import.sql: Chọn tab Server -> Data Import -> Import from Self-contained File -> chọn KyTucXa_import.sql -> Để trống Default Target Schema -> Start import
 
 ## Cài đặt và chạy
 
+### Với Windows: 
 Chạy run.bat (Tự động cài đặt môi trường và mở app)
 
-
-Mặc định ứng dụng kết nối localhost:3306, user root, mật khẩu trống, database KyTucXa. Nếu cấu hình MySQL khác, đặt biến môi trường trước khi chạy:
-
-```powershell
-$env:KYTUCXA_DB_HOST = "localhost"
-$env:KYTUCXA_DB_PORT = "3306"
-$env:KYTUCXA_DB_USER = "root"
-$env:KYTUCXA_DB_PASSWORD = ""
-$env:KYTUCXA_DB_NAME = "KyTucXa"
-python main.py
+Nếu chạy run.bat thất bại:
+Cài đặt thư viện:
+```bash
+    pip install -r requirements.txt
 ```
+
+Chạy app:
+```bash
+    python main.py
+```
+
+### Với Linux / MacOS:
+Cài đặt thư viện:
+```bash
+    pip install -r requirements.txt
+```
+
+Chạy app:
+```bash
+    python3 main.py
+```
+
+Mặc định ứng dụng kết nối localhost:3306, user root, mật khẩu trống, database KyTucXa. Nếu cấu hình MySQL khác, vui lòng chỉnh sửa trong src/db.py
 
 ## Cấu trúc
 
